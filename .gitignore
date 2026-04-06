@@ -4,6 +4,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Credentials (never commit real passwords) ###
+application-local.properties
+.env
+
+### Large media assets (add emerald-intro.mp4 manually — see README) ###
+*.mp4
+
 ### STS ###
 .apt_generated
 .classpath
