@@ -371,6 +371,23 @@
         .tb-pk-dot  { width: 9px; height: 9px; border-radius: 1px; display: inline-block; margin-left: 2px; }
         .tb-mv-entry { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; border-bottom: 1px solid var(--colorE); font-size: 7px; }
         .tb-mv-entry:hover { background: var(--sel-hover); }
+        /* ===== TEAM GENERATOR ===== */
+        #tb-auto-btn {
+            font-family: var(--pixel); font-size: 7px; padding: 6px 12px;
+            background: #152e15; border: 2px solid #4d4; color: #4d4;
+            cursor: pointer; letter-spacing: 1px; margin-left: 6px; white-space: nowrap;
+            text-shadow: 0 0 8px #4d4; box-shadow: 0 0 8px rgba(68,220,68,.25);
+        }
+        #tb-auto-btn:hover    { background: #1f4a1f; color: #9f9; border-color: #9f9; text-shadow: 0 0 12px #9f9; }
+        #tb-auto-btn:disabled { opacity: .38; cursor: not-allowed; box-shadow: none; text-shadow: none; }
+        #tb-gen-status { font-size: 6px; color: #7f7; letter-spacing: 1px; animation: tb-blink 1s step-start infinite; }
+        @keyframes tb-blink { 50% { opacity: 0; } }
+        .tb-auto-moves-btn {
+            background: none; border: 1px solid #3a3; color: #4d4;
+            font-size: 5px; padding: 2px 5px; cursor: pointer; font-family: var(--pixel); flex-shrink: 0; line-height: 1.4;
+        }
+        .tb-auto-moves-btn:hover    { background: #1a4a1a; color: #9f9; border-color: #9f9; }
+        .tb-auto-moves-btn:disabled { opacity: .35; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -419,6 +436,8 @@
     <div id="tb-panel">
         <div id="tb-hd">
             <span id="tb-hd-title">&#9658; TEAM BUILDER</span>
+            <span id="tb-gen-status"></span>
+            <button id="tb-auto-btn">&#9889; AUTO TEAM</button>
             <button id="tb-close-btn">&#9587; CLOSE</button>
         </div>
         <div id="tb-body">
@@ -1117,6 +1136,7 @@
             +   '<div class="tb-slot-name">' + p.name.toUpperCase() + '</div>'
             +   '<div class="tb-slot-types">' + badges + '</div>'
             + '</div>'
+            + '<button class="tb-auto-moves-btn" data-si="' + si + '">\u26a1 MOVES</button>'
             + '<button class="tb-slot-rm" data-si="' + si + '">\u2715</button>'
             + '</div>'
             + '<div class="tb-move-list">' + movesH + '</div>';
@@ -1381,6 +1401,249 @@
         if (dc && dc[p.id] && dc[p.id].poke) renderMoveList(dc[p.id].poke.moves || [], q);
     });
     document.getElementById('tb-move-picker-close').addEventListener('click', closeMovePicker);
+
+    /* =========================================================
+       TEAM GENERATOR  (inside TB IIFE; accesses team, ALL_TYPES,
+       eff(), renderSlots(), renderCoverage(), moveCache, TB_BG)
+    ========================================================= */
+
+    var _genBusy    = false;
+    var _smogSets   = null;
+    var _smogTried  = false;
+    var _mvDetCache = {};
+
+    var MOVE_UTIL = {
+        'recover':88,'softboiled':88,'rest':72,
+        'thunder-wave':86,'toxic':74,'substitute':80,
+        'amnesia':86,'swords-dance':84,'agility':72,
+        'reflect':68,'light-screen':68,'leech-seed':70,
+        'sleep-powder':78,'spore':84,'hypnosis':64,
+        'stun-spore':70,'sing':54,'lovely-kiss':62,
+        'counter':62,'seismic-toss':58,'night-shade':56,
+        'explosion':96,'self-destruct':88,
+        'fire-spin':16,'wrap':16,'bind':16,'clamp':16,
+        'horn-drill':2,'fissure':2,'guillotine':2
+    };
+
+    function _bst(p) {
+        return (p.hp||0)+(p.attackStat||0)+(p.defenseStat||0)+(p.speedStat||0);
+    }
+
+    function _scoreCand(cand, curTeam) {
+        var t1 = (cand.primaryType  ||'').toLowerCase();
+        var t2 = (cand.secondaryType||'').toLowerCase() || null;
+        var sc = _bst(cand) * 0.008;
+        ALL_TYPES.forEach(function(atk) {
+            var tw = 0;
+            curTeam.forEach(function(s) {
+                if (!s.pokemon) return;
+                var pt1=(s.pokemon.primaryType  ||'').toLowerCase();
+                var pt2=(s.pokemon.secondaryType||'').toLowerCase()||null;
+                if (eff(atk,pt1,pt2) >= 2) tw++;
+            });
+            if (!tw) return;
+            var e = eff(atk, t1, t2);
+            if      (e === 0)  sc += tw * 4;
+            else if (e  <  1)  sc += tw * 2;
+            else if (e >= 2)   sc -= tw * 3;
+        });
+        curTeam.forEach(function(s) {
+            if (!s.pokemon) return;
+            var ft1=(s.pokemon.primaryType  ||'').toLowerCase();
+            var ft2=(s.pokemon.secondaryType||'').toLowerCase()||null;
+            if (ft1===t1||(ft2&&ft2===t1)) sc -= 6;
+            if (t2 && (ft1===t2||(ft2&&ft2===t2))) sc -= 3;
+        });
+        return sc;
+    }
+
+    function _gs(msg) {
+        var el = document.getElementById('tb-gen-status');
+        if (el) el.textContent = msg;
+    }
+    function _gb(busy) {
+        _genBusy = busy;
+        var b = document.getElementById('tb-auto-btn');
+        if (b) b.disabled = busy;
+        document.querySelectorAll('.tb-auto-moves-btn').forEach(function(x){ x.disabled = busy; });
+    }
+
+    var SMOG_URLS = [
+        'https://raw.githubusercontent.com/smogon/sets/master/gen1ou.json',
+        'https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/random-battles/gen1/sets.json',
+        'https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen1/random-sets.json'
+    ];
+
+    function _loadSmog() {
+        if (_smogTried) return Promise.resolve(_smogSets);
+        _smogTried = true;
+        function tryI(i) {
+            if (i >= SMOG_URLS.length) return Promise.resolve(null);
+            return fetch(SMOG_URLS[i])
+                .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+                .then(function(d){ _smogSets = d; return d; })
+                .catch(function(){ return tryI(i+1); });
+        }
+        return tryI(0);
+    }
+
+    function _smogMovesFor(pname) {
+        if (!_smogSets) return null;
+        var key = pname.charAt(0).toUpperCase() + pname.slice(1).toLowerCase();
+        if (pname.toLowerCase()==='nidoran-f') key='Nidoran-F';
+        if (pname.toLowerCase()==='nidoran-m') key='Nidoran-M';
+        var entry = _smogSets[key] || _smogSets[key.toLowerCase()] || _smogSets[pname] || null;
+        if (!entry) return null;
+        var raw = [];
+        if (Array.isArray(entry)) {
+            var s0 = entry[0];
+            if (s0 && Array.isArray(s0.moves)) raw = s0.moves.map(function(m){ return Array.isArray(m)?m[0]:m; });
+        } else if (entry.sets && entry.sets.length) {
+            var ss = entry.sets[0];
+            if (Array.isArray(ss.moves)) raw = ss.moves.map(function(m){ return Array.isArray(m)?m[0]:m; });
+        } else if (Array.isArray(entry.moves)) {
+            raw = entry.moves.map(function(m){ return Array.isArray(m)?m[0]:m; });
+        }
+        return raw.slice(0,4).map(function(n){ return (n||'').toLowerCase().replace(/ /g,'-'); }).filter(Boolean);
+    }
+
+    function _fetchDet(moveName) {
+        if (_mvDetCache[moveName]) return Promise.resolve(_mvDetCache[moveName]);
+        return fetch('https://pokeapi.co/api/v2/move/'+moveName+'/')
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+                var det = { name:d.name, type:d.type?d.type.name:'normal', power:d.power||0, accuracy:d.accuracy||100 };
+                _mvDetCache[moveName] = det;
+                return det;
+            });
+    }
+
+    function _scoreMv(det, pokemon) {
+        if (MOVE_UTIL[det.name] !== undefined) return MOVE_UTIL[det.name];
+        var bp = det.power || 0;
+        if (bp === 0) return 5;
+        var sc = bp * ((det.accuracy||100)/100);
+        var t1 = (pokemon.primaryType  ||'').toLowerCase();
+        var t2 = (pokemon.secondaryType||'').toLowerCase();
+        if (det.type===t1||det.type===t2) sc *= 1.5;
+        return sc;
+    }
+
+    function _mvFromAPI(si) {
+        var p = team[si].pokemon;
+        function pick(allMoves) {
+            var g1 = allMoves.filter(function(m){
+                return m.version_group_details.some(function(v){
+                    var vn = v.version_group.name;
+                    return vn==='red-blue'||vn==='yellow';
+                });
+            });
+            if (!g1.length) g1 = allMoves;
+            var seen = {};
+            g1 = g1.filter(function(m){ if(seen[m.move.name])return false; seen[m.move.name]=true; return true; });
+            return Promise.all(g1.map(function(m){
+                return _fetchDet(m.move.name).catch(function(){ return null; });
+            })).then(function(dets){
+                var valid = dets.filter(Boolean);
+                var scored = valid.map(function(d){ return {det:d, sc:_scoreMv(d,p)}; });
+                scored.sort(function(a,b){ return b.sc-a.sc; });
+                var picked=[], usedT={};
+                scored.forEach(function(x){ if(picked.length>=4)return; if(!usedT[x.det.type]){picked.push(x.det);usedT[x.det.type]=true;} });
+                scored.forEach(function(x){ if(picked.length>=4)return; if(picked.indexOf(x.det)===-1)picked.push(x.det); });
+                picked.forEach(function(d,mi){
+                    team[si].moves[mi] = { name:d.name, type:d.type, url:'https://pokeapi.co/api/v2/move/'+d.name+'/' };
+                });
+            });
+        }
+        var dc = window._tbDetailCache;
+        if (dc&&dc[p.id]&&dc[p.id].poke&&dc[p.id].poke.moves) return pick(dc[p.id].poke.moves);
+        return fetch('https://pokeapi.co/api/v2/pokemon/'+p.id+'/')
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+                if (!window._tbDetailCache) window._tbDetailCache={};
+                if (!window._tbDetailCache[p.id]) window._tbDetailCache[p.id]={};
+                window._tbDetailCache[p.id].poke = d;
+                return pick(d.moves||[]);
+            });
+    }
+
+    function _genMvSlot(si) {
+        var p = team[si].pokemon;
+        if (!p) return Promise.resolve();
+        return _loadSmog().then(function(){
+            var sm = _smogMovesFor(p.name);
+            if (sm && sm.length >= 2) {
+                return Promise.all(sm.map(function(n){
+                    return _fetchDet(n).catch(function(){ return null; });
+                })).then(function(dets){
+                    dets.forEach(function(d,mi){
+                        if (d) team[si].moves[mi] = { name:d.name, type:d.type, url:'https://pokeapi.co/api/v2/move/'+d.name+'/' };
+                    });
+                });
+            }
+            return _mvFromAPI(si);
+        });
+    }
+
+    function _autoTeam() {
+        if (_genBusy) return;
+        var all = window._tbAllPokemon || [];
+        if (!all.length) { _gs('NO DATA'); return; }
+        _gb(true); _gs('BUILDING TEAM...');
+
+        var usedIds = {};
+        team.forEach(function(s){ if (s.pokemon) usedIds[s.pokemon.id]=true; });
+
+        team.forEach(function(s, si){
+            if (s.pokemon) return;
+            var cands  = all.filter(function(p){ return !usedIds[p.id]; });
+            var scored = cands.map(function(p){ return {p:p, sc:_scoreCand(p, team)}; });
+            scored.sort(function(a,b){ return b.sc-a.sc; });
+            var pool   = scored.slice(0, Math.min(3, scored.length));
+            var chosen = pool[Math.floor(Math.random()*pool.length)].p;
+            team[si]   = { pokemon:chosen, moves:[null,null,null,null] };
+            usedIds[chosen.id] = true;
+        });
+
+        renderSlots(); renderCoverage(); _gs('LOADING MOVES...');
+
+        var emptySlots = [];
+        team.forEach(function(s,si){
+            if (s.pokemon && s.moves.every(function(m){ return m===null; })) emptySlots.push(si);
+        });
+
+        _loadSmog().then(function(){
+            return emptySlots.reduce(function(chain,si){
+                return chain.then(function(){ return _genMvSlot(si); });
+            }, Promise.resolve());
+        }).then(function(){
+            renderSlots(); renderCoverage(); _gb(false); _gs('');
+        }).catch(function(err){
+            console.error('Team gen error', err);
+            renderSlots(); renderCoverage(); _gb(false); _gs('');
+        });
+    }
+
+    function _autoMvSlot(si) {
+        if (_genBusy) return;
+        if (!team[si]||!team[si].pokemon) return;
+        _gb(true); _gs('FETCHING MOVES...');
+        team[si].moves = [null,null,null,null];
+        _genMvSlot(si).then(function(){
+            renderSlots(); renderCoverage(); _gb(false); _gs('');
+        }).catch(function(){
+            _gb(false); _gs('ERROR');
+        });
+    }
+
+    document.getElementById('tb-auto-btn').addEventListener('click', function(){
+        if (!_genBusy) _autoTeam();
+    });
+    document.getElementById('tb-slots').addEventListener('click', function(e){
+        var btn = e.target.closest('.tb-auto-moves-btn');
+        if (!btn) return;
+        _autoMvSlot(+btn.dataset.si);
+    });
 
 })();
 </script>
