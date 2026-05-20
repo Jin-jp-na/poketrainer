@@ -1,6 +1,6 @@
 # PokéTrainer
 
-A full-stack Pokédex + Team Builder web app built with **Spring Boot 3** and **vanilla HTML/CSS/JS**. Browse all 151 Gen 1 Pokémon, explore their moves, abilities, and stats — then assemble a team and analyze its type coverage.
+A full-stack Pokédex + Team Builder web app built with **Spring Boot 3** and **vanilla HTML/CSS/JS**. Browse all Pokémon, explore their moves, abilities, and stats — then assemble a team and analyze its type coverage.
 
 ---
 
