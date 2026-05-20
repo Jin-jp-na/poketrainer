@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeTrainer - Pokemon List</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0d16;
+            --panel: #161b28;
+            --panel-2: #0f1320;
+            --panel-3: #1d2335;
+            --line: #2a324a;
+            --hover: #1e3450;
+            --active: #2e4a6e;
+            --text: #dde3f0;
+            --muted: #5a6a8a;
+            --font: "Press Start 2P", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        .page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-bottom: 2px solid var(--line);
+            background: linear-gradient(180deg, #1c3550 0%, #111826 100%);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .ball {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            background: linear-gradient(180deg, #e00 50%, #fff 50%);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .ball::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 7px;
+            height: 7px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 2px solid #333;
+            background: #fff;
+        }
+
+        .title {
+            font-size: clamp(10px, 1.8vw, 16px);
+            letter-spacing: 3px;
+            text-shadow: 0 0 14px #4af, 0 0 3px #fff;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 7px;
+            letter-spacing: 1px;
+            line-height: 1.8;
+        }
+
+        .actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 30px;
+            padding: 0 12px;
+            text-decoration: none;
+            color: var(--text);
+            border: 1px solid var(--line);
+            background: var(--panel-2);
+            font-size: 7px;
+        }
+
+        .nav-btn:hover {
+            background: var(--hover);
+            color: #fff;
+        }
+
+        #count {
+            color: var(--muted);
+            font-size: 7px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            border-bottom: 2px solid var(--line);
+            background: var(--panel);
+        }
+
+        .controls input,
+        .controls select {
+            height: 30px;
+            border: 1px solid var(--active);
+            background: var(--panel-2);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 7px;
+            padding: 0 8px;
+        }
+
+        .controls input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .layout {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 300px minmax(0, 1fr);
+        }
+
+        .list {
+            overflow-y: auto;
+            background: var(--panel);
+            border-right: 2px solid var(--line);
+        }
+
+        .entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--line);
+            cursor: pointer;
+        }
+
+        .entry:hover {
+            background: var(--hover);
+        }
+
+        .entry.active {
+            background: var(--active);
+        }
+
+        .entry-num,
+        .entry-rank {
+            color: var(--muted);
+            font-size: 7px;
+            flex-shrink: 0;
+        }
+
+        .entry-num {
+            width: 38px;
+            text-align: right;
+        }
+
+        .entry-rank {
+            width: 26px;
+            text-align: right;
+        }
+
+        .entry-sprite {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            flex-shrink: 0;
+        }
+
+        .entry-name {
+            flex: 1;
+            min-width: 0;
+            font-size: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .detail {
+            overflow-y: auto;
+            background: var(--panel-2);
+            padding: 18px;
+        }
+
+        .placeholder {
+            height: 100%;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            color: var(--muted);
+            font-size: 8px;
+            line-height: 2.8;
+        }
+
+        .hero {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            padding: 16px;
+            border: 2px solid var(--line);
+            background: var(--panel);
+            margin-bottom: 16px;
+        }
+
+        .hero-sprite {
+            width: 110px;
+            height: 110px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            background: var(--panel-2);
+            border: 2px solid var(--line);
+            padding: 6px;
+        }
+
+        .hero-main {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .hero-num {
+            color: var(--muted);
+            font-size: 8px;
+            margin-bottom: 10px;
+        }
+
+        .hero-name {
+            font-size: clamp(12px, 2vw, 18px);
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .type-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .type-badge {
+            padding: 5px 9px;
+            font-size: 6px;
+            text-transform: uppercase;
+        }
+
+        .facts {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .fact {
+            padding: 12px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+        }
+
+        .fact-label {
+            color: var(--muted);
+            font-size: 6px;
+            margin-bottom: 8px;
+        }
+
+        .fact-value {
+            font-size: 9px;
+        }
+
+        .section {
+            margin-bottom: 16px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+        }
+
+        .section-title {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 7px;
+            letter-spacing: 2px;
+        }
+
+        .stats,
+        .flavor,
+        .abilities,
+        .moves {
+            padding: 12px;
+        }
+
+        .flavor {
+            color: var(--text);
+            font-size: 7px;
+            line-height: 2.2;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .stat-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            width: 36px;
+            text-align: right;
+            color: var(--muted);
+            font-size: 6px;
+        }
+
+        .stat-value {
+            width: 28px;
+            text-align: right;
+            font-size: 7px;
+        }
+
+        .stat-bar {
+            flex: 1;
+            height: 10px;
+            border: 1px solid var(--line);
+            background: var(--panel-3);
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #58b6ff 0%, #ff645f 100%);
+        }
+
+        .ability-item,
+        .move-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--line);
+            font-size: 7px;
+        }
+
+        .ability-item:last-child,
+        .move-item:last-child {
+            border-bottom: none;
+        }
+
+        .ability-tag,
+        .move-tag {
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        .detail-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .detail-tab {
+            flex: 1;
+            height: 34px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            color: var(--muted);
+            font-family: var(--font);
+            font-size: 7px;
+            cursor: pointer;
+        }
+
+        .detail-tab:hover,
+        .detail-tab.active {
+            background: var(--active);
+            color: #fff;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .profile-card {
+            padding: 12px;
+            border: 1px solid var(--line);
+            background: var(--panel-3);
+        }
+
+        .profile-card.wide {
+            grid-column: 1 / -1;
+        }
+
+        .profile-label {
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 6px;
+        }
+
+        .profile-value {
+            font-size: 8px;
+            line-height: 2;
+        }
+
+        .move-section {
+            border-bottom: 1px solid var(--line);
+        }
+
+        .move-section:last-child {
+            border-bottom: none;
+        }
+
+        .move-section-title {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            background: var(--panel-3);
+            color: var(--muted);
+            font-size: 7px;
+            letter-spacing: 1px;
+        }
+
+        .move-row {
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1fr) 70px 46px 50px 42px;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-bottom: 1px dashed var(--line);
+            font-size: 7px;
+        }
+
+        .move-row:last-child {
+            border-bottom: none;
+        }
+
+        .move-row.header {
+            color: var(--muted);
+            font-size: 6px;
+            background: var(--panel-2);
+        }
+
+        .move-name-cell {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .move-type-badge {
+            min-width: 62px;
+            padding: 4px 6px;
+            text-align: center;
+            font-size: 5px;
+        }
+
+        .move-class.physical {
+            color: #f5ac78;
+        }
+
+        .move-class.special {
+            color: #85ddff;
+        }
+
+        .move-class.status {
+            color: #9b9b9b;
+        }
+
+        .ability-block {
+            margin: 12px;
+            border: 1px solid var(--line);
+            background: var(--panel-3);
+        }
+
+        .ability-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            font-size: 8px;
+        }
+
+        .ability-desc {
+            padding: 12px;
+            color: var(--muted);
+            font-size: 7px;
+            line-height: 2.2;
+        }
+
+        .evo-chain {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px;
+        }
+
+        .evo-mon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .evo-mon:hover,
+        .evo-mon.current {
+            border-color: var(--active);
+            background: var(--hover);
+        }
+
+        .evo-mon img {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        .evo-name,
+        .evo-method {
+            color: var(--muted);
+            font-size: 5px;
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        .detail-note {
+            color: var(--muted);
+            font-size: 7px;
+            line-height: 2.2;
+        }
+
+        .status {
+            padding: 24px 12px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 8px;
+            line-height: 2.4;
+        }
+
+        .normal { background: #aa9; color: #2c2c27; }
+        .fire { background: #f42; color: #49170e; }
+        .water { background: #39f; color: #0e2031; }
+        .electric { background: #fc3; color: #31280b; }
+        .grass { background: #7c5; color: #16330a; }
+        .ice { background: #6cf; color: #143f55; }
+        .fighting { background: #b54; color: #361914; }
+        .poison { background: #a59; color: #2b1526; }
+        .ground { background: #db5; color: #302813; }
+        .flying { background: #89f; color: #161a2c; }
+        .psychic { background: #f59; color: #31101d; }
+        .bug { background: #ab2; color: #2a2e09; }
+        .rock { background: #ba6; color: #252215; }
+        .ghost { background: #66b; color: #171729; }
+        .dragon { background: #76e; color: #0f0d1f; }
+        .dark { background: #754; color: #251b15; }
+        .steel { background: #aab; color: #1b1b1f; }
+        .fairy { background: #e9e; color: #201520; }
+
+        @media (max-width: 920px) {
+            body {
+                overflow: auto;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .actions {
+                margin-left: 0;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: 34vh minmax(0, 1fr);
+            }
+
+            .list {
+                border-right: none;
+                border-bottom: 2px solid var(--line);
+            }
+
+            .facts {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .move-row {
+                grid-template-columns: 40px minmax(0, 1fr) 56px;
+            }
+
+            .move-row > :nth-child(4),
+            .move-row > :nth-child(5),
+            .move-row > :nth-child(6) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <header class="header">
+        <div class="brand">
+            <div class="ball"></div>
+            <div>
+                <div class="title">POKEMON LIST</div>
+                <div class="subtitle">GEN I BROWSER WITH SEARCH, FILTERS, MOVES, ABILITIES, AND EVOLUTIONS</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="nav-btn" href="index.html">HOME</a>
+            <a class="nav-btn" href="auto-team.html">AUTO TEAM</a>
+            <span id="count">LOADING...</span>
+        </div>
+    </header>
+
+    <div class="controls">
+        <input id="search" type="search" placeholder="SEARCH POKEMON..." autocomplete="off" spellcheck="false">
+        <select id="sort">
+            <option value="id">SORT: ID</option>
+            <option value="rank">SORT: RANK</option>
+            <option value="name">SORT: NAME</option>
+        </select>
+        <select id="type">
+            <option value="">ALL TYPES</option>
+        </select>
+    </div>
+
+    <main class="layout">
+        <aside id="list" class="list">
+            <div class="status">LOADING...<br><br>PLEASE WAIT</div>
+        </aside>
+        <section id="detail" class="detail">
+            <div class="placeholder">SELECT A POKEMON<br>TO VIEW DETAILS</div>
+        </section>
+    </main>
+</div>
+
+<script>
+(function () {
+    var API = window.location.protocol === 'file:' ? 'http://localhost:8080' : '';
+    var POKE_API = 'https://pokeapi.co/api/v2';
+    var BLANK_SPRITE = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+    var allPokemon = [];
+    var filteredPokemon = [];
+    var selectedId = null;
+    var activeTab = 'profile';
+    var detailCache = {};
+    var moveDetailCache = {};
+    var moveObserver = null;
+
+    var STATS = [
+        { key: 'hp', label: 'HP', max: 255, field: 'hp' },
+        { key: 'attack', label: 'ATK', max: 190, field: 'attackStat' },
+        { key: 'defense', label: 'DEF', max: 230, field: 'defenseStat' },
+        { key: 'special-attack', label: 'SPA', max: 194, field: 'specialAttackStat' },
+        { key: 'special-defense', label: 'SPD', max: 230, field: 'specialDefenseStat' },
+        { key: 'speed', label: 'SPE', max: 200, field: 'speedStat' }
+    ];
+
+    function pad(value) {
+        return String(value).padStart(3, '0');
+    }
+
+    function esc(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char];
+        });
+    }
+
+    function label(value) {
+        return esc(rawLabel(value));
+    }
+
+    function rawLabel(value) {
+        return String(value || '').replace(/-/g, ' ').toUpperCase();
+    }
+
+    function titleCase(value) {
+        return String(value || '').replace(/-/g, ' ').replace(/\b\w/g, function (char) {
+            return char.toUpperCase();
+        });
+    }
+
+    function percent(value, max) {
+        return Math.min(100, Math.round(((value || 0) / max) * 100));
+    }
+
+    function meters(value) {
+        return value ? (value / 10).toFixed(1) + ' m' : '-';
+    }
+
+    function kilograms(value) {
+        return value ? (value / 10).toFixed(1) + ' kg' : '-';
+    }
+
+    function spriteStatic(pokemon) {
+        return pokemon.spriteUrl || BLANK_SPRITE;
+    }
+
+    function typeBadge(type) {
+        var name = String(type || '').toLowerCase();
+        return '<span class="type-badge ' + esc(name) + '">' + label(name) + '</span>';
+    }
+
+    function buildEntry(pokemon) {
+        var item = document.createElement('div');
+        item.className = 'entry' + (pokemon.id === selectedId ? ' active' : '');
+        item.dataset.id = pokemon.id;
+        item.innerHTML =
+            '<span class="entry-num">#' + pad(pokemon.id) + '</span>' +
+            '<img class="entry-sprite" src="' + esc(spriteStatic(pokemon)) + '" alt="' + esc(pokemon.name) + '">' +
+            '<span class="entry-name">' + label(pokemon.name) + '</span>' +
+            '<span class="entry-rank">' + (pokemon.rankPosition ? '#' + pokemon.rankPosition : '') + '</span>';
+        item.addEventListener('click', function () {
+            selectPokemon(pokemon.id);
+        });
+        return item;
+    }
+
+    function renderList() {
+        var list = document.getElementById('list');
+        list.innerHTML = '';
+
+        if (!filteredPokemon.length) {
+            list.innerHTML = '<div class="status">NO RESULTS</div>';
+            return;
+        }
+
+        var fragment = document.createDocumentFragment();
+        filteredPokemon.forEach(function (pokemon) {
+            fragment.appendChild(buildEntry(pokemon));
+        });
+        list.appendChild(fragment);
+    }
+
+    function statRow(stat, value) {
+        return '<div class="stat-row" data-stat="' + esc(stat.key) + '">' +
+            '<span class="stat-label">' + esc(stat.label) + '</span>' +
+            '<span class="stat-value">' + (value || 0) + '</span>' +
+            '<div class="stat-bar"><div class="stat-fill" style="width:' + percent(value, stat.max) + '%"></div></div>' +
+        '</div>';
+    }
+
+    function renderDetailShell(pokemon) {
+        var detail = document.getElementById('detail');
+        var types = [pokemon.primaryType, pokemon.secondaryType].filter(Boolean).map(typeBadge).join('');
+        var statTotal = 0;
+        var statRows = STATS.map(function (stat) {
+            var value = pokemon[stat.field] || 0;
+            statTotal += value;
+            return statRow(stat, value);
+        }).join('');
+
+        detail.innerHTML =
+            '<div class="hero">' +
+                '<img class="hero-sprite" src="' + esc(spriteStatic(pokemon)) + '" alt="' + esc(pokemon.name) + '">' +
+                '<div class="hero-main">' +
+                    '<div class="hero-num">#' + pad(pokemon.id) + '</div>' +
+                    '<div class="hero-name">' + label(pokemon.name) + '</div>' +
+                    '<div class="type-row">' + types + '</div>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="facts">' +
+                '<div class="fact"><div class="fact-label">RANK</div><div class="fact-value">#' + (pokemon.rankPosition || '?') + '</div></div>' +
+                '<div class="fact"><div class="fact-label">SCORE</div><div class="fact-value">' + (pokemon.score != null ? Number(pokemon.score).toFixed(1) : '?') + '</div></div>' +
+                '<div class="fact"><div class="fact-label">HEIGHT</div><div id="fact-height" class="fact-value">' + meters(pokemon.height) + '</div></div>' +
+                '<div class="fact"><div class="fact-label">WEIGHT</div><div id="fact-weight" class="fact-value">' + kilograms(pokemon.weight) + '</div></div>' +
+            '</div>' +
+
+            '<div class="section"><div class="section-title">BASE STATS</div><div class="stats">' +
+                statRows +
+                '<div class="stat-row" data-stat="bst">' +
+                    '<span class="stat-label">BST</span>' +
+                    '<span id="bst-value" class="stat-value">' + statTotal + '</span>' +
+                    '<div class="stat-bar"><div class="stat-fill" style="width:' + percent(statTotal, 780) + '%"></div></div>' +
+                '</div>' +
+            '</div></div>' +
+            '<div class="detail-tabs">' +
+                tabButton('profile', 'PROFILE') +
+                tabButton('moves', 'MOVES') +
+                tabButton('abilities', 'ABILITIES') +
+            '</div>' +
+            '<div id="panel-profile" class="tab-panel' + (activeTab === 'profile' ? ' active' : '') + '">' +
+                '<div class="section"><div class="section-title">PROFILE</div><div class="status">LOADING PROFILE...</div></div>' +
+            '</div>' +
+            '<div id="panel-moves" class="tab-panel' + (activeTab === 'moves' ? ' active' : '') + '">' +
+                '<div class="section"><div class="section-title">MOVES</div><div class="status">LOADING MOVES...</div></div>' +
+            '</div>' +
+            '<div id="panel-abilities" class="tab-panel' + (activeTab === 'abilities' ? ' active' : '') + '">' +
+                '<div class="section"><div class="section-title">ABILITIES</div><div class="status">LOADING ABILITIES...</div></div>' +
+            '</div>';
+    }
+
+    function tabButton(tab, text) {
+        return '<button class="detail-tab' + (activeTab === tab ? ' active' : '') + '" data-tab="' + tab + '">' + text + '</button>';
+    }
+
+    function setActiveTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll('.detail-tab').forEach(function (button) {
+            button.classList.toggle('active', button.dataset.tab === tab);
+        });
+        document.querySelectorAll('.tab-panel').forEach(function (panel) {
+            panel.classList.toggle('active', panel.id === 'panel-' + tab);
+        });
+        if (tab === 'moves') {
+            hydrateMoveRows();
+        }
+    }
+
+    function fetchDetail(pokemon) {
+        var id = pokemon.id;
+        if (detailCache[id]) {
+            populateDetail(pokemon, detailCache[id]);
+            return;
+        }
+
+        Promise.all([
+            fetch(POKE_API + '/pokemon/' + id).then(function (response) { return response.json(); }),
+            fetch(POKE_API + '/pokemon-species/' + id).then(function (response) { return response.json(); })
+        ]).then(function (results) {
+                detailCache[id] = { pokemon: results[0], species: results[1] };
+                if (selectedId === id) {
+                    populateDetail(pokemon, detailCache[id]);
+                }
+            }).catch(function () {
+                if (selectedId === id) {
+                    document.getElementById('panel-profile').innerHTML = '<div class="section"><div class="section-title">PROFILE</div><div class="status">COULD NOT LOAD POKEAPI DETAILS</div></div>';
+                    document.getElementById('panel-moves').innerHTML = '<div class="section"><div class="section-title">MOVES</div><div class="status">COULD NOT LOAD MOVE DATA</div></div>';
+                    document.getElementById('panel-abilities').innerHTML = '<div class="section"><div class="section-title">ABILITIES</div><div class="status">COULD NOT LOAD ABILITY DATA</div></div>';
+                }
+            });
+    }
+
+    function populateDetail(pokemon, data) {
+        if (selectedId !== pokemon.id) {
+            return;
+        }
+        updateStats(data.pokemon);
+        populateProfile(pokemon, data.pokemon, data.species);
+        populateMoves(data.pokemon);
+        populateAbilities(data.pokemon);
+        setActiveTab(activeTab);
+    }
+
+    function updateStats(pokeData) {
+        var map = {};
+        (pokeData.stats || []).forEach(function (item) {
+            if (item.stat && item.stat.name) {
+                map[item.stat.name] = item.base_stat || 0;
+            }
+        });
+
+        var total = 0;
+        STATS.forEach(function (stat) {
+            var value = map[stat.key] || 0;
+            total += value;
+            var row = document.querySelector('[data-stat="' + stat.key + '"]');
+            if (!row) {
+                return;
+            }
+            row.querySelector('.stat-value').textContent = value;
+            row.querySelector('.stat-fill').style.width = percent(value, stat.max) + '%';
+        });
+
+        var bst = document.getElementById('bst-value');
+        var bstRow = document.querySelector('[data-stat="bst"]');
+        if (bst && bstRow) {
+            bst.textContent = total;
+            bstRow.querySelector('.stat-fill').style.width = percent(total, 780) + '%';
+        }
+
+        var height = document.getElementById('fact-height');
+        var weight = document.getElementById('fact-weight');
+        if (height) {
+            height.textContent = meters(pokeData.height);
+        }
+        if (weight) {
+            weight.textContent = kilograms(pokeData.weight);
+        }
+    }
+
+    function profileCard(labelText, value, wide) {
+        return '<div class="profile-card' + (wide ? ' wide' : '') + '">' +
+            '<div class="profile-label">' + esc(labelText) + '</div>' +
+            '<div class="profile-value">' + (value || '-') + '</div>' +
+        '</div>';
+    }
+
+    function populateProfile(localPokemon, pokeData, speciesData) {
+        var panel = document.getElementById('panel-profile');
+        var flavor = findEnglishFlavor(speciesData);
+        var genus = findEnglishGenus(speciesData);
+        var growthRate = speciesData.growth_rate ? titleCase(speciesData.growth_rate.name) : '-';
+        var color = speciesData.color ? titleCase(speciesData.color.name) : '-';
+        var eggs = (speciesData.egg_groups || []).map(function (group) {
+            return titleCase(group.name);
+        }).join(', ') || '-';
+
+        panel.innerHTML =
+            '<div class="section">' +
+                '<div class="section-title">PROFILE</div>' +
+                '<div class="profile-grid">' +
+                    (flavor ? profileCard('POKEDEX ENTRY', esc(flavor), true) : '') +
+                    profileCard('SPECIES', esc(genus || '-'), false) +
+                    profileCard('COLOR', esc(color), false) +
+                    profileCard('HEIGHT', esc(meters(pokeData.height)), false) +
+                    profileCard('WEIGHT', esc(kilograms(pokeData.weight)), false) +
+                    profileCard('CATCH RATE', esc(speciesData.capture_rate == null ? '-' : speciesData.capture_rate), false) +
+                    profileCard('BASE HAPPINESS', esc(speciesData.base_happiness == null ? '-' : speciesData.base_happiness), false) +
+                    profileCard('GROWTH RATE', esc(growthRate), false) +
+                    profileCard('GENDER', esc(formatGender(speciesData.gender_rate)), false) +
+                    profileCard('EGG GROUPS', esc(eggs), true) +
+                '</div>' +
+            '</div>' +
+            '<div class="section">' +
+                '<div class="section-title">EVOLUTION</div>' +
+                '<div id="evolution-content" class="status">LOADING EVOLUTION...</div>' +
+            '</div>';
+
+        if (speciesData.evolution_chain && speciesData.evolution_chain.url) {
+            populateEvolution(speciesData.evolution_chain.url, localPokemon.id);
+        } else {
+            document.getElementById('evolution-content').innerHTML = '<div class="detail-note">NO EVOLUTION DATA AVAILABLE</div>';
+        }
+    }
+
+    function findEnglishFlavor(speciesData) {
+        var entries = speciesData.flavor_text_entries || [];
+        var entry = entries.find(function (item) {
+            return item.language && item.language.name === 'en' && item.version && item.version.name === 'red';
+        }) || entries.find(function (item) {
+            return item.language && item.language.name === 'en';
+        });
+        return entry ? entry.flavor_text.replace(/[\f\n]/g, ' ') : '';
+    }
+
+    function findEnglishGenus(speciesData) {
+        var genus = (speciesData.genera || []).find(function (item) {
+            return item.language && item.language.name === 'en';
+        });
+        return genus ? genus.genus : '';
+    }
+
+    function formatGender(rate) {
+        if (rate === -1) {
+            return 'GENDERLESS';
+        }
+        if (rate === 0) {
+            return '100% M';
+        }
+        if (rate === 8) {
+            return '100% F';
+        }
+        if (rate == null) {
+            return '-';
+        }
+        return Math.round((8 - rate) / 8 * 100) + '% M / ' + Math.round(rate / 8 * 100) + '% F';
+    }
+
+    function populateEvolution(url, currentId) {
+        fetch(url).then(function (response) {
+            return response.json();
+        }).then(function (data) {
+            if (selectedId !== currentId) {
+                return;
+            }
+            var chain = [];
+            walkEvolution(data.chain, null, chain);
+            var html = '<div class="evo-chain">';
+            chain.forEach(function (item, index) {
+                if (index > 0) {
+                    html += '<div class="evo-method">' + esc(evolutionMethod(item.detail)) + '</div>';
+                }
+                html += '<div class="evo-mon' + (item.id === currentId ? ' current' : '') + '" data-id="' + item.id + '">' +
+                    '<img src="' + esc(evolutionSprite(item.id, item.name)) + '" alt="' + esc(item.name) + '">' +
+                    '<div class="evo-name">' + label(item.name) + '</div>' +
+                '</div>';
+            });
+            html += '</div>';
+            var target = document.getElementById('evolution-content');
+            if (target) {
+                target.innerHTML = html;
+            }
+        }).catch(function () {
+            var target = document.getElementById('evolution-content');
+            if (target && selectedId === currentId) {
+                target.innerHTML = '<div class="detail-note">COULD NOT LOAD EVOLUTION DATA</div>';
+            }
+        });
+    }
+
+    function walkEvolution(node, detail, chain) {
+        if (!node || !node.species) {
+            return;
+        }
+        chain.push({ id: idFromUrl(node.species.url), name: node.species.name, detail: detail });
+        (node.evolves_to || []).forEach(function (next) {
+            walkEvolution(next, next.evolution_details && next.evolution_details[0], chain);
+        });
+    }
+
+    function idFromUrl(url) {
+        var parts = String(url || '').replace(/\/$/, '').split('/');
+        return Number(parts[parts.length - 1]);
+    }
+
+    function evolutionMethod(detail) {
+        if (!detail || !detail.trigger) {
+            return 'EVOLVES';
+        }
+        if (detail.trigger.name === 'level-up') {
+            if (detail.min_level) {
+                return 'LV ' + detail.min_level;
+            }
+            if (detail.min_happiness) {
+                return 'HIGH FRIENDSHIP';
+            }
+            return 'LEVEL UP';
+        }
+        if (detail.trigger.name === 'use-item') {
+            return detail.item ? titleCase(detail.item.name) : 'ITEM';
+        }
+        if (detail.trigger.name === 'trade') {
+            return 'TRADE';
+        }
+        return titleCase(detail.trigger.name);
+    }
+
+    function evolutionSprite(id, name) {
+        var local = allPokemon.find(function (pokemon) { return pokemon.id === id; });
+        return (local && local.spriteUrl) || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + id + '.png';
+    }
+
+    function populateMoves(pokeData) {
+        if (moveObserver) {
+            moveObserver.disconnect();
+            moveObserver = null;
+        }
+
+        var panel = document.getElementById('panel-moves');
+        var groups = {
+            'level-up': [],
+            machine: [],
+            egg: [],
+            tutor: [],
+            other: []
+        };
+        var labels = {
+            'level-up': 'LEVEL UP',
+            machine: 'TM / HM',
+            egg: 'EGG MOVES',
+            tutor: 'TUTOR MOVES',
+            other: 'OTHER'
+        };
+        var seen = {};
+
+        (pokeData.moves || []).forEach(function (moveSlot) {
+            var detail = preferredMoveDetail(moveSlot.version_group_details || []);
+            if (!detail || !moveSlot.move) {
+                return;
+            }
+            var method = detail.move_learn_method ? detail.move_learn_method.name : 'other';
+            var group = groups[method] ? method : 'other';
+            var key = group + '|' + moveSlot.move.name;
+            if (seen[key]) {
+                return;
+            }
+            seen[key] = true;
+            groups[group].push({
+                name: moveSlot.move.name,
+                url: moveSlot.move.url,
+                level: detail.level_learned_at || 0,
+                method: method
+            });
+        });
+
+        groups['level-up'].sort(function (a, b) { return a.level - b.level || a.name.localeCompare(b.name); });
+        ['machine', 'egg', 'tutor', 'other'].forEach(function (group) {
+            groups[group].sort(function (a, b) { return a.name.localeCompare(b.name); });
+        });
+
+        var html = '<div class="section"><div class="section-title">MOVES</div>';
+        var hasMoves = false;
+        Object.keys(groups).forEach(function (group) {
+            var moves = groups[group];
+            if (!moves.length) {
+                return;
+            }
+            hasMoves = true;
+            html += '<div class="move-section">' +
+                '<div class="move-section-title">' + labels[group] + ' - ' + moves.length + '</div>' +
+                '<div class="move-row header"><span>LV</span><span>NAME</span><span>TYPE</span><span>PWR</span><span>ACC</span><span>CLS</span></div>';
+            moves.forEach(function (move) {
+                html += '<div class="move-row" data-url="' + esc(move.url) + '">' +
+                    '<span>' + esc(group === 'level-up' ? (move.level || '-') : '-') + '</span>' +
+                    '<span class="move-name-cell">' + label(move.name) + '</span>' +
+                    '<span class="move-type-badge">...</span>' +
+                    '<span class="move-power">...</span>' +
+                    '<span class="move-acc">...</span>' +
+                    '<span class="move-class">...</span>' +
+                '</div>';
+            });
+            html += '</div>';
+        });
+        html += hasMoves ? '</div>' : '<div class="status">NO MOVE DATA AVAILABLE</div></div>';
+        panel.innerHTML = html;
+        hydrateMoveRows();
+    }
+
+    function preferredMoveDetail(details) {
+        return details.find(function (detail) {
+            return detail.version_group && detail.version_group.name === 'red-blue';
+        }) || details.find(function (detail) {
+            return detail.version_group && detail.version_group.name === 'yellow';
+        }) || details[0];
+    }
+
+    function hydrateMoveRows() {
+        if (activeTab !== 'moves') {
+            return;
+        }
+        var rows = Array.prototype.slice.call(document.querySelectorAll('#panel-moves .move-row[data-url]:not([data-load-started])'));
+        if (!rows.length) {
+            return;
+        }
+        if ('IntersectionObserver' in window) {
+            if (!moveObserver) {
+                moveObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            moveObserver.unobserve(entry.target);
+                            loadMoveRow(entry.target);
+                        }
+                    });
+                }, { root: document.getElementById('detail'), rootMargin: '160px' });
+            }
+            rows.forEach(function (row) { moveObserver.observe(row); });
+            return;
+        }
+        rows.slice(0, 30).forEach(loadMoveRow);
+    }
+
+    function loadMoveRow(row) {
+        row.dataset.loadStarted = 'true';
+        var url = row.dataset.url;
+        if (!moveDetailCache[url]) {
+            moveDetailCache[url] = fetch(url).then(function (response) {
+                return response.json();
+            });
+        }
+        moveDetailCache[url].then(function (move) {
+            updateMoveRow(row, move);
+        }).catch(function () {
+            row.querySelector('.move-type-badge').textContent = '-';
+            row.querySelector('.move-power').textContent = '-';
+            row.querySelector('.move-acc').textContent = '-';
+            row.querySelector('.move-class').textContent = '-';
+        });
+    }
+
+    function updateMoveRow(row, move) {
+        var type = move.type && move.type.name ? move.type.name : '';
+        var damageClass = move.damage_class && move.damage_class.name ? move.damage_class.name : '';
+        var typeElement = row.querySelector('.move-type-badge');
+        var classElement = row.querySelector('.move-class');
+
+        typeElement.textContent = type ? type.toUpperCase() : '-';
+        typeElement.className = 'move-type-badge' + (type ? ' ' + type : '');
+        row.querySelector('.move-power').textContent = move.power == null ? '-' : move.power;
+        row.querySelector('.move-acc').textContent = move.accuracy == null ? '-' : move.accuracy + '%';
+        classElement.textContent = damageClass ? damageClass.slice(0, 3).toUpperCase() : '-';
+        classElement.className = 'move-class' + (damageClass ? ' ' + damageClass : '');
+    }
+
+    function populateAbilities(pokeData) {
+        var panel = document.getElementById('panel-abilities');
+        var abilities = pokeData.abilities || [];
+        if (!abilities.length) {
+            panel.innerHTML = '<div class="section"><div class="section-title">ABILITIES</div><div class="status">NO ABILITY DATA AVAILABLE</div></div>';
+            return;
+        }
+
+        var pokemonId = pokeData.id;
+        panel.innerHTML = '<div class="section"><div class="section-title">ABILITIES</div><div class="status">LOADING ABILITY DESCRIPTIONS...</div></div>';
+        Promise.all(abilities.map(function (slot) {
+            return fetch(slot.ability.url).then(function (response) {
+                return response.json();
+            }).then(function (ability) {
+                var effect = (ability.effect_entries || []).find(function (entry) {
+                    return entry.language && entry.language.name === 'en';
+                });
+                var flavor = (ability.flavor_text_entries || []).find(function (entry) {
+                    return entry.language && entry.language.name === 'en';
+                });
+                return {
+                    name: slot.ability.name,
+                    tag: slot.is_hidden ? 'HIDDEN' : 'SLOT ' + slot.slot,
+                    description: (effect && effect.short_effect) || (flavor && flavor.flavor_text.replace(/[\f\n]/g, ' ')) || '-'
+                };
+            }).catch(function () {
+                return {
+                    name: slot.ability.name,
+                    tag: slot.is_hidden ? 'HIDDEN' : 'SLOT ' + slot.slot,
+                    description: '-'
+                };
+            });
+        })).then(function (items) {
+            if (selectedId !== pokemonId) {
+                return;
+            }
+            panel.innerHTML = '<div class="section"><div class="section-title">ABILITIES</div>' +
+                items.map(function (item) {
+                    return '<div class="ability-block">' +
+                        '<div class="ability-head"><span>' + label(item.name) + '</span><span class="ability-tag">' + esc(item.tag) + '</span></div>' +
+                        '<div class="ability-desc">' + esc(item.description) + '</div>' +
+                    '</div>';
+                }).join('') +
+            '</div>';
+        });
+    }
+
+    function selectPokemon(id) {
+        selectedId = id;
+        var pokemon = allPokemon.find(function (item) { return item.id === id; });
+        if (!pokemon) {
+            return;
+        }
+
+        document.querySelectorAll('.entry').forEach(function (entry) {
+            entry.classList.toggle('active', Number(entry.dataset.id) === id);
+        });
+
+        renderDetailShell(pokemon);
+        fetchDetail(pokemon);
+    }
+
+    function applyFilters() {
+        var search = document.getElementById('search').value.trim().toLowerCase();
+        var sort = document.getElementById('sort').value;
+        var type = document.getElementById('type').value.toLowerCase();
+
+        filteredPokemon = allPokemon.filter(function (pokemon) {
+            if (search && pokemon.name.toLowerCase().indexOf(search) === -1) {
+                return false;
+            }
+            if (type) {
+                var primary = (pokemon.primaryType || '').toLowerCase();
+                var secondary = (pokemon.secondaryType || '').toLowerCase();
+                if (primary !== type && secondary !== type) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if (sort === 'rank') {
+            filteredPokemon.sort(function (a, b) { return (a.rankPosition || 999) - (b.rankPosition || 999); });
+        } else if (sort === 'id') {
+            filteredPokemon.sort(function (a, b) { return a.id - b.id; });
+        } else {
+            filteredPokemon.sort(function (a, b) { return a.name.localeCompare(b.name); });
+        }
+
+        renderList();
+    }
+
+    function populateTypeFilter() {
+        var seen = {};
+        allPokemon.forEach(function (pokemon) {
+            if (pokemon.primaryType) {
+                seen[pokemon.primaryType.toLowerCase()] = true;
+            }
+            if (pokemon.secondaryType) {
+                seen[pokemon.secondaryType.toLowerCase()] = true;
+            }
+        });
+
+        var select = document.getElementById('type');
+        Object.keys(seen).sort().forEach(function (type) {
+            var option = document.createElement('option');
+            option.value = type;
+            option.textContent = type.toUpperCase();
+            select.appendChild(option);
+        });
+    }
+
+    function loadData() {
+        fetch(API + '/api/pokemon')
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                allPokemon = data;
+                document.getElementById('count').textContent = data.length + ' SPECIES';
+                populateTypeFilter();
+                applyFilters();
+                if (filteredPokemon.length) {
+                    selectPokemon(filteredPokemon[0].id);
+                }
+            })
+            .catch(function () {
+                document.getElementById('count').textContent = 'OFFLINE';
+                document.getElementById('list').innerHTML = '<div class="status" style="color:#f77">ERROR<br><br>START THE APP FIRST</div>';
+            });
+    }
+
+    document.getElementById('detail').addEventListener('click', function (event) {
+        var tab = event.target.closest('.detail-tab');
+        if (tab) {
+            setActiveTab(tab.dataset.tab);
+            return;
+        }
+
+        var evolution = event.target.closest('.evo-mon[data-id]');
+        if (evolution) {
+            selectPokemon(Number(evolution.dataset.id));
+        }
+    });
+
+    document.getElementById('search').addEventListener('input', applyFilters);
+    document.getElementById('sort').addEventListener('change', applyFilters);
+    document.getElementById('type').addEventListener('change', applyFilters);
+    loadData();
+})();
+</script>
+</body>
+</html>

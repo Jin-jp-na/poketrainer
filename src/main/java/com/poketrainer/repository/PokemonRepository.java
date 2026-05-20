@@ -9,6 +9,7 @@ import java.util.Optional;
 public interface PokemonRepository extends JpaRepository<Pokemon, Long> {
     Optional<Pokemon> findByName(String name);
     boolean existsByName(String name);
+    List<Pokemon> findAllByOrderByIdAsc();
     List<Pokemon> findAllByOrderByScoreDescNameAsc();
     List<Pokemon> findTop10ByOrderByScoreDescNameAsc();
 }

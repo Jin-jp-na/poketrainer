@@ -1,7 +1,9 @@
 package com.poketrainer.controller;
 
 import com.poketrainer.model.Pokemon;
+import com.poketrainer.model.PokemonMove;
 import com.poketrainer.service.PokemonImportService;
+import com.poketrainer.service.PokemonMoveService;
 import com.poketrainer.service.PokemonRankingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -15,11 +17,14 @@ public class PokemonController {
 
     private final PokemonImportService pokemonImportService;
     private final PokemonRankingService pokemonRankingService;
+    private final PokemonMoveService pokemonMoveService;
 
     public PokemonController(PokemonImportService pokemonImportService,
-                             PokemonRankingService pokemonRankingService) {
+                             PokemonRankingService pokemonRankingService,
+                             PokemonMoveService pokemonMoveService) {
         this.pokemonImportService = pokemonImportService;
         this.pokemonRankingService = pokemonRankingService;
+        this.pokemonMoveService = pokemonMoveService;
     }
 
     @PostMapping("/import/{idOrName}")
@@ -56,5 +61,11 @@ public class PokemonController {
     public Pokemon getPokemonById(@PathVariable Long id) {
         pokemonImportService.ensureInitialPokemonLoaded();
         return pokemonRankingService.getPokemonById(id);
+    }
+
+    @GetMapping("/{id}/moves")
+    public List<PokemonMove> getPokemonMoves(@PathVariable Long id) {
+        pokemonImportService.ensureInitialPokemonLoaded();
+        return pokemonMoveService.getMovesForPokemon(id);
     }
 }

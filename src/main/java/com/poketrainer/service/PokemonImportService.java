@@ -40,6 +40,10 @@ public class PokemonImportService {
     }
 
     public synchronized boolean ensureInitialPokemonLoaded() {
+        if (pokemonRepository.count() >= INITIAL_POKEMON_COUNT) {
+            return false;
+        }
+
         List<String> missingPokemonIds = findMissingInitialPokemonIds();
 
         if (missingPokemonIds.isEmpty()) {
@@ -125,13 +129,15 @@ public class PokemonImportService {
         Integer hp = extractStat(response, "hp");
         Integer attack = extractStat(response, "attack");
         Integer defense = extractStat(response, "defense");
+        Integer specialAttack = extractStat(response, "special-attack");
+        Integer specialDefense = extractStat(response, "special-defense");
         Integer speed = extractStat(response, "speed");
 
         String spriteUrl = response.getSprites() != null
                 ? response.getSprites().getFront_default()
                 : null;
 
-        return new Pokemon(
+        Pokemon pokemon = new Pokemon(
                 response.getId(),
                 response.getName(),
                 primaryType,
@@ -142,6 +148,14 @@ public class PokemonImportService {
                 speed,
                 spriteUrl
         );
+
+        pokemon.setSpecialAttackStat(specialAttack);
+        pokemon.setSpecialDefenseStat(specialDefense);
+        pokemon.setHeight(response.getHeight());
+        pokemon.setWeight(response.getWeight());
+        pokemon.setAbilities(extractAbilities(response));
+
+        return pokemon;
     }
 
     private Integer extractStat(PokeApiPokemonResponse response, String statName) {
@@ -154,5 +168,21 @@ public class PokemonImportService {
                 .findFirst();
 
         return stat.map(PokeApiPokemonResponse.PokemonStatSlot::getBase_stat).orElse(0);
+    }
+
+    private String extractAbilities(PokeApiPokemonResponse response) {
+        if (response.getAbilities() == null || response.getAbilities().isEmpty()) {
+            return null;
+        }
+
+        return response.getAbilities().stream()
+                .filter(abilitySlot -> abilitySlot.getAbility() != null && abilitySlot.getAbility().getName() != null)
+                .sorted(Comparator.comparingInt(PokeApiPokemonResponse.PokemonAbilitySlot::getSlot))
+                .map(abilitySlot -> abilitySlot.getAbility().getName()
+                        + (abilitySlot.isIs_hidden() ? " (hidden)" : ""))
+                .toList()
+                .stream()
+                .reduce((first, second) -> first + "," + second)
+                .orElse(null);
     }
 }

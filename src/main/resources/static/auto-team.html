@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeTrainer - Auto Team</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="auto-team.css">
+</head>
+<body>
+<div class="page">
+    <header class="header">
+        <div class="brand">
+            <div class="ball"></div>
+            <div>
+                <div class="title">AUTO TEAM</div>
+                <div class="subtitle">BUILD A SIX-POKEMON TEAM AND CHECK DEFENSIVE OR OFFENSIVE COVERAGE</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <span id="roster-count">LOADING DATABASE...</span>
+            <span id="status">SYNCING POKEMON...</span>
+            <button id="auto-team-btn" class="action-btn" disabled>AUTO TEAM</button>
+            <a class="nav-btn" href="pokemon-list.html">POKEMON LIST</a>
+            <a class="nav-btn" href="index.html">HOME</a>
+        </div>
+    </header>
+
+    <main class="layout">
+        <aside class="sidebar">
+            <div class="panel-title">TEAM SLOTS</div>
+            <div class="panel-copy">Choose Pokemon manually or auto-fill the full roster, then assign or generate moves.</div>
+            <div id="slots"></div>
+        </aside>
+
+        <section class="coverage">
+            <div class="tabs">
+                <button class="tab-btn active" data-mode="defense">DEFENSIVE COVERAGE</button>
+                <button class="tab-btn" data-mode="offense">OFFENSIVE COVERAGE</button>
+            </div>
+            <div class="legend">
+                <span>4x</span>
+                <span>2x</span>
+                <span>1x</span>
+                <span>1/2</span>
+                <span>1/4</span>
+                <span>IMMUNE</span>
+            </div>
+            <div id="coverage-content"></div>
+        </section>
+    </main>
+</div>
+
+<div id="pokemon-overlay" class="overlay">
+    <div class="picker">
+        <div class="picker-head">
+            <div class="picker-title">ADD POKEMON</div>
+            <button id="pokemon-close" class="picker-close">X</button>
+        </div>
+        <input id="pokemon-search" type="search" placeholder="SEARCH..." autocomplete="off" spellcheck="false">
+        <div id="pokemon-picker-list" class="picker-list"></div>
+    </div>
+</div>
+
+<div id="move-overlay" class="overlay">
+    <div class="picker">
+        <div class="picker-head">
+            <div class="picker-title">SELECT MOVE</div>
+            <button id="move-close" class="picker-close">X</button>
+        </div>
+        <input id="move-search" type="search" placeholder="SEARCH MOVES..." autocomplete="off" spellcheck="false">
+        <div id="move-picker-list" class="picker-list"></div>
+    </div>
+</div>
+
+<script src="auto-team.js"></script>
+</body>
+</html>

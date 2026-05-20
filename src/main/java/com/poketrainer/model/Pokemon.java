@@ -18,9 +18,15 @@ public class Pokemon {
     private Integer hp;
     private Integer attackStat;
     private Integer defenseStat;
+    private Integer specialAttackStat;
+    private Integer specialDefenseStat;
     private Integer speedStat;
 
+    private Integer height;
+    private Integer weight;
+
     private String spriteUrl;
+    private String abilities;
 
     private Float score;
     private Integer rankPosition;
@@ -70,12 +76,32 @@ public class Pokemon {
         return defenseStat;
     }
 
+    public Integer getSpecialAttackStat() {
+        return specialAttackStat;
+    }
+
+    public Integer getSpecialDefenseStat() {
+        return specialDefenseStat;
+    }
+
     public Integer getSpeedStat() {
         return speedStat;
     }
 
+    public Integer getHeight() {
+        return height;
+    }
+
+    public Integer getWeight() {
+        return weight;
+    }
+
     public String getSpriteUrl() {
         return spriteUrl;
+    }
+
+    public String getAbilities() {
+        return abilities;
     }
 
     public Float getScore() {
@@ -114,12 +140,32 @@ public class Pokemon {
         this.defenseStat = defenseStat;
     }
 
+    public void setSpecialAttackStat(Integer specialAttackStat) {
+        this.specialAttackStat = specialAttackStat;
+    }
+
+    public void setSpecialDefenseStat(Integer specialDefenseStat) {
+        this.specialDefenseStat = specialDefenseStat;
+    }
+
     public void setSpeedStat(Integer speedStat) {
         this.speedStat = speedStat;
     }
 
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public void setWeight(Integer weight) {
+        this.weight = weight;
+    }
+
     public void setSpriteUrl(String spriteUrl) {
         this.spriteUrl = spriteUrl;
+    }
+
+    public void setAbilities(String abilities) {
+        this.abilities = abilities;
     }
 
     public void setScore(float score) {

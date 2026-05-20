@@ -18,7 +18,7 @@ public class PokemonRankingService {
     }
 
     public List<Pokemon> getAllPokemon() {
-        return pokemonRepository.findAll();
+        return pokemonRepository.findAllByOrderByIdAsc();
     }
 
     public Pokemon getPokemonById(Long id) {
